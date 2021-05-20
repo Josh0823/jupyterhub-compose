@@ -1,0 +1,188 @@
+{% extends "page.html" %}
+{% block main %}
+
+<!-- add a way to manage entrypoints (add/delete) -->
+
+<div class="container">
+
+    <div class="row">
+        <form id="clear-selection" class="col-md-offset-3 col-md-6">
+            <div class="form-group">
+                <div class="text-center">
+                    <button type="submit" class="btn btn-lg btn-jupyter">
+                        Clear current custom entrypoint
+                    </button>
+                </div>
+            </div>
+        </form>
+    </div>
+
+    <div class="row">
+        <div class="col-md-offset-3 col-md-6">
+            <dl>
+                <dt>Your current custom entrypoint:</dt>
+                <dd id="current-entrypoint"> None
+                </dd>
+            </dl>
+        </div>
+    </div>
+
+    <div class="row">
+        <form id="update-conda" class="update-entrypoint col-md-offset-2 col-md-8">
+            <div class="form-group">
+                <!-- <label for="change-image">Change a conda environment as entrypoint</label> -->
+                <div class="input-group">
+                    <input id="conda_path" name="conda_path" class="form-control" list="envs" autocomplete="off"
+                        placeholder="Choose a conda environment as entrypoint">
+                    <span class="input-group-btn">
+                        <button type="submit" class="btn btn-jupyter">change</button>
+                    </span>
+                </div>
+                <small id="conda-path-note" class="form-text text-muted">
+                    Click <a href="">here</a> for instructions on adding a conda environment
+                </small>
+                <datalist id="envs">
+                    {% for env in envs %}
+                    <option value="{{ env }}">
+                    </option>
+                    {% endfor %}
+                </datalist>
+            </div>
+        </form>
+    </div>
+
+    <div class="row">
+        <form id="update-shifter" class="update-entrypoint col-md-offset-2 col-md-8">
+            <div class="form-group">
+                <!-- <label for="change-image">Change your Shifter image:</label> -->
+                <div class="input-group">
+                    <input id="shifter_image" name="shifter_image" class="form-control" list="images" autocomplete="off" disabled placeholder="Please wait, loading images...">
+                    <span class="input-group-btn">
+                        <button type="submit" class="btn btn-jupyter">change</button>
+                    </span>
+                </div>
+                <small id="change-image-note" class="form-text text-muted">
+                    Click <a href="">here</a> for instructions on adding a shifter image
+                </small>
+                <datalist id="images">
+                    {% for image in images %}
+                    <option value="{{ image }}">
+                    </option>
+                    {% endfor %}
+                </datalist>
+            </div>
+        </form>
+    </div>
+
+    <div class="row">
+        <form id="update-script" class="update-entrypoint col-md-offset-2 col-md-8">
+            <div class="form-group">
+                <div class="input-group">
+                    <input id="script" name="script" class="form-control" list="scripts" autocomplete="off"
+                        placeholder="Choose an advanced startup script as entrypoint">
+                    <span class="input-group-btn">
+                        <button type="submit" class="btn btn-jupyter">change</button>
+                    </span>
+                </div>
+                <small id="change-script-note" class="form-text text-muted">
+                    Click <a href="">here</a> for instructions on using advanced startup scripts
+                </small>
+                <datalist id="scripts">
+                    {% for script in scripts %}
+                    <option value="{{ script }}">
+                    </option>
+                    {% endfor %}
+                </datalist>
+            </div>
+        </form>
+    </div>
+</div>
+
+<style scoped>
+    form {
+        margin-bottom: 10px;
+    }
+    .update-entrypoint {
+        margin-bottom: 50px;
+    }
+</style>
+
+{% endblock %}
+
+{% block script %}
+{{ super() }}
+<script type="text/javascript">
+
+$.get("/services/entrypoint/user/{{user.name}}", function(data) {
+    if (Object.keys(data).length === 0) {
+        return;
+    }
+
+    const type = data['{{user.name}}']['type'];
+    let prefix = '';
+    if (type === '') {
+        prefix = 'None'
+    }
+    else if (type === 'conda') {
+        prefix = 'Conda: ';
+    } else if (type === 'shifter') {
+        prefix = 'Shifter image: ';
+    } else {
+        prefix = 'Script: ';
+    }
+    const env = data['{{user.name}}']['entrypoint']
+    $("#current-entrypoint").html(prefix + env);
+});
+
+$.get("/services/entrypoint/images/user/{{user.name}}", function(data) {
+  const images = data["images"];
+  let content = "";
+  $.each(images, function(index, value) {
+    content += `<option value="${value}">\n`;
+  });
+  $("#images").html(content);
+  $("#shifter_image").prop("disabled", false);
+  $("#shifter_image").attr("placeholder", "Select an image from the list...");
+});
+
+$("#clear-selection").submit(function(event) {
+    event.preventDefault();
+    $.ajax({
+        method: "DELETE",
+        url: "/services/entrypoint/user/{{user.name}}"
+    }).always(function() {
+        location.reload(true);
+    });
+});
+
+$("#update-conda").submit(function(event) {
+    event.preventDefault();
+    const path = $("#conda_path").val();
+    updateEntrypoint(path, 'conda');
+});
+
+$("#update-shifter").submit(function(event) {
+    event.preventDefault();
+    const path = $("#shifter_image").val();
+    updateEntrypoint(path, 'shifter');
+});
+
+$("#update-script").submit(function(event) {
+    event.preventDefault();
+    const path = $("#script").val();
+    updateEntrypoint(path, 'script');
+});
+
+function updateEntrypoint(entrypoint, type) {
+    $.ajax({
+        method: "POST", 
+        url: "/services/entrypoint/user/{{user.name}}",
+        data: JSON.stringify({"entrypoint": entrypoint, "type": type}),
+        contentType: "application/json; charset=utf-8",
+        dataType: "json",
+    }).always(function() {
+        location.reload(true);
+    });
+}
+</script>
+{% endblock %}

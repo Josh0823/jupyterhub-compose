@@ -619,20 +619,24 @@ c.JupyterHub.services = [{
     'url': 'http://announcement:8888',
     'api_token': os.environ["ANNOUNCEMENT_API_TOKEN"]
 }, {
-    'name': 'images',
-    'url': 'http://images:8888',
-    'api_token': os.environ["IMAGES_API_TOKEN"],
-    'display': False
-}, {
-    'name': 'profile-manager',
-    'url': 'http://profile-manager:8888',
-    'api_token': os.environ["PROFILE_MANAGER_API_TOKEN"]
-}, {
-    'name': 'profiles',
-    'url': 'http://profiles:8888',
-    'api_token': os.environ["PROFILES_API_TOKEN"],
-    'admin': True,
-    'display': False
+#     'name': 'images',
+#     'url': 'http://images:8888',
+#     'api_token': os.environ["IMAGES_API_TOKEN"],
+#     'display': False
+# }, {
+#     'name': 'profile-manager',
+#     'url': 'http://profile-manager:8888',
+#     'api_token': os.environ["PROFILE_MANAGER_API_TOKEN"]
+# }, {
+#     'name': 'profiles',
+#     'url': 'http://profiles:8888',
+#     'api_token': os.environ["PROFILES_API_TOKEN"],
+#     'admin': True,
+#     'display': False
+# }, {
+    'name': 'entrypoint',
+    'url': 'http://entrypoint:8888',
+    'api_token': os.environ["ENTRYPOINT_API_TOKEN"]
 }]
 
 ## Instead of starting the Application, dump configuration to stdout

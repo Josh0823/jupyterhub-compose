@@ -11,6 +11,7 @@ openssl rand -hex 32 > images-api-token.txt
 openssl rand -hex 32 > profile-manager-api-token.txt
 openssl rand -hex 32 > profiles-api-token.txt
 openssl rand -hex 32 > shifter-api-token.txt
+openssl rand -hex 32 > entrypoint-api-token.txt
 cd ..
 
 echo Building announcement...
@@ -48,3 +49,7 @@ cd shifter
 docker build -t shifter:latest .
 cd ..
 
+echo Building entrypoint...
+cd entrypoint
+docker build --no-cache -t entrypoint:latest .
+cd ..

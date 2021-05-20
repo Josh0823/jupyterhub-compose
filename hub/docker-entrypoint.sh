@@ -29,8 +29,9 @@ file_env() {
 
 file_env 'ANNOUNCEMENT_API_TOKEN'
 file_env 'CONFIGPROXY_AUTH_TOKEN'
-file_env 'IMAGES_API_TOKEN'
-file_env 'PROFILE_MANAGER_API_TOKEN'
-file_env 'PROFILES_API_TOKEN'
+# file_env 'IMAGES_API_TOKEN'
+# file_env 'PROFILE_MANAGER_API_TOKEN'
+# file_env 'PROFILES_API_TOKEN'
+file_env 'ENTRYPOINT_API_TOKEN'
 
 exec "$@"
