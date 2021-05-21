@@ -33,7 +33,7 @@
                 <!-- <label for="change-image">Change a conda environment as entrypoint</label> -->
                 <div class="input-group">
                     <input id="conda_path" name="conda_path" class="form-control" list="envs" autocomplete="off"
-                        placeholder="Choose a conda environment as entrypoint">
+                        placeholder="Please wait, loading conda environments...">
                     <span class="input-group-btn">
                         <button type="submit" class="btn btn-jupyter">change</button>
                     </span>
@@ -56,7 +56,8 @@
             <div class="form-group">
                 <!-- <label for="change-image">Change your Shifter image:</label> -->
                 <div class="input-group">
-                    <input id="shifter_image" name="shifter_image" class="form-control" list="images" autocomplete="off" disabled placeholder="Please wait, loading images...">
+                    <input id="shifter_image" name="shifter_image" class="form-control" list="images" autocomplete="off"
+                        disabled placeholder="Please wait, loading images...">
                     <span class="input-group-btn">
                         <button type="submit" class="btn btn-jupyter">change</button>
                     </span>
@@ -79,7 +80,7 @@
             <div class="form-group">
                 <div class="input-group">
                     <input id="script" name="script" class="form-control" list="scripts" autocomplete="off"
-                        placeholder="Choose an advanced startup script as entrypoint">
+                        placeholder="Please wait, loading scripts...">
                     <span class="input-group-btn">
                         <button type="submit" class="btn btn-jupyter">change</button>
                     </span>
@@ -102,6 +103,7 @@
     form {
         margin-bottom: 10px;
     }
+
     .update-entrypoint {
         margin-bottom: 50px;
     }
@@ -112,77 +114,98 @@
 {% block script %}
 {{ super() }}
 <script type="text/javascript">
+    $.get("/services/entrypoint/user/{{user.name}}/current", function (data) {
+        if (Object.keys(data).length === 0) {
+            return;
+        }
 
-$.get("/services/entrypoint/user/{{user.name}}", function(data) {
-    if (Object.keys(data).length === 0) {
-        return;
-    }
-
-    const type = data['{{user.name}}']['type'];
-    let prefix = '';
-    if (type === '') {
-        prefix = 'None'
-    }
-    else if (type === 'conda') {
-        prefix = 'Conda: ';
-    } else if (type === 'shifter') {
-        prefix = 'Shifter image: ';
-    } else {
-        prefix = 'Script: ';
-    }
-    const env = data['{{user.name}}']['entrypoint']
-    $("#current-entrypoint").html(prefix + env);
-});
-
-$.get("/services/entrypoint/images/user/{{user.name}}", function(data) {
-  const images = data["images"];
-  let content = "";
-  $.each(images, function(index, value) {
-    content += `<option value="${value}">\n`;
-  });
-  $("#images").html(content);
-  $("#shifter_image").prop("disabled", false);
-  $("#shifter_image").attr("placeholder", "Select an image from the list...");
-});
-
-$("#clear-selection").submit(function(event) {
-    event.preventDefault();
-    $.ajax({
-        method: "DELETE",
-        url: "/services/entrypoint/user/{{user.name}}"
-    }).always(function() {
-        location.reload(true);
+        const type = data['{{user.name}}']['type'];
+        let prefix = '';
+        if (type === '') {
+            prefix = 'None'
+        }
+        else if (type === 'conda') {
+            prefix = 'Conda: ';
+        } else if (type === 'shifter') {
+            prefix = 'Shifter image: ';
+        } else {
+            prefix = 'Script: ';
+        }
+        const env = data['{{user.name}}']['entrypoint']
+        $("#current-entrypoint").html(prefix + env);
     });
-});
 
-$("#update-conda").submit(function(event) {
-    event.preventDefault();
-    const path = $("#conda_path").val();
-    updateEntrypoint(path, 'conda');
-});
-
-$("#update-shifter").submit(function(event) {
-    event.preventDefault();
-    const path = $("#shifter_image").val();
-    updateEntrypoint(path, 'shifter');
-});
-
-$("#update-script").submit(function(event) {
-    event.preventDefault();
-    const path = $("#script").val();
-    updateEntrypoint(path, 'script');
-});
-
-function updateEntrypoint(entrypoint, type) {
-    $.ajax({
-        method: "POST", 
-        url: "/services/entrypoint/user/{{user.name}}",
-        data: JSON.stringify({"entrypoint": entrypoint, "type": type}),
-        contentType: "application/json; charset=utf-8",
-        dataType: "json",
-    }).always(function() {
-        location.reload(true);
+    $.get("/services/entrypoint/images/user/{{user.name}}", function (data) {
+        const images = data["images"];
+        let content = "";
+        $.each(images, function (index, value) {
+            content += `<option value="${value}">\n`;
+        });
+        $("#images").html(content);
+        $("#shifter_image").prop("disabled", false);
+        $("#shifter_image").attr("placeholder", "Choose a shifter image as entrypoint");
     });
-}
+
+    $.get("/services/entrypoint/envs/user/{{user.name}}", function (data) {
+        const envs = data["{{user.name}}"];
+        let content = "";
+        $.each(envs, function (index, value) {
+            content += `<option value="${value['entrypoint']}">\n`;
+        });
+        $("#envs").html(content);
+        $("#conda_path").prop("disabled", false);
+        $("#conda_path").attr("placeholder", "Choose a conda environment as entrypoint");
+    });
+
+    $.get("/services/entrypoint/scripts/user/{{user.name}}", function (data) {
+        const scripts = data["{{user.name}}"];
+        let content = "";
+        $.each(scripts, function (index, value) {
+            content += `<option value="${value['entrypoint']}">\n`;
+        });
+        $("#scripts").html(content);
+        $("#script").prop("disabled", false);
+        $("#script").attr("placeholder", "Choose an advanced startup script as entrypoint");
+    });
+
+    $("#clear-selection").submit(function (event) {
+        event.preventDefault();
+        $.ajax({
+            method: "DELETE",
+            url: "/services/entrypoint/user/{{user.name}}/current"
+        }).always(function () {
+            location.reload(true);
+        });
+    });
+
+    $("#update-conda").submit(function (event) {
+        event.preventDefault();
+        const path = $("#conda_path").val();
+        updateEntrypoint(path, 'conda');
+    });
+
+    $("#update-shifter").submit(function (event) {
+        event.preventDefault();
+        const path = $("#shifter_image").val();
+        updateEntrypoint(path, 'shifter');
+    });
+
+    $("#update-script").submit(function (event) {
+        event.preventDefault();
+        const path = $("#script").val();
+        updateEntrypoint(path, 'script');
+    });
+
+    function updateEntrypoint(entrypoint, type) {
+        $.ajax({
+            method: "POST",
+            url: `/services/entrypoint/user/{{user.name}}/${type}`,
+            data: JSON.stringify({ "entrypoint": entrypoint, "type": type }),
+            contentType: "application/json; charset=utf-8",
+            dataType: "json",
+        }).always(function () {
+            location.reload(true);
+        });
+    }
 </script>
 {% endblock %}

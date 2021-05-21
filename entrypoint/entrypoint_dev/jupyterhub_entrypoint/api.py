@@ -1,36 +1,61 @@
-import json
 from tornado import escape, web
 from jupyterhub.services.auth import HubAuthenticated
 
-# TODO
-# stat conda env to ensure environment is legit
-# Add validation to POST request
-class APIUserSelectionHandler(HubAuthenticated, web.RequestHandler):    
+
+class APIBaseHandler(HubAuthenticated, web.RequestHandler):
     def initialize(self):
         self.storage = self.settings['storage']
-        self.service_prefix = self.settings['service_prefix']
+
+    def verify_user(self, user):
+        current_user = self.get_current_user()
+        if not current_user.get("admin", False) and current_user["name"] != user:
+            raise web.HTTPError(403)
+
+
+# TODO
+# stat conda env to ensure environment is legit
+class APIUserSelectionHandler(APIBaseHandler):
+    def initialize(self):
+        self.storage = self.settings['storage']
 
     @web.authenticated
-    async def get(self, user):
-        info = await self.storage.read(user)
+    async def get(self, user, type):
+        self.verify_user(user)
+        info = self.storage.read(user, type)
         print(f'Info fetched for {user}: {info}')
 
         if info:
             self.write(info)
-    
+
     @web.authenticated
-    async def delete(self, user):
-        await self.storage.delete(user)
+    async def delete(self, user, type):
+        self.verify_user(user)
+        self.storage.delete(user, type)
         print(f'Info deleted for {user}')
-        
+
     # add stat check to confirm path is good
     @web.authenticated
-    async def post(self, user):
+    async def post(self, user, type):
+        self.verify_user(user)
         doc = escape.json_decode(self.request.body)
-        
-        await self.storage.create(user, doc)
+
+        self.storage.create(user, doc, type)
         print(f'Info set for {user}: {doc}')
-        
-    def write_to_json(self, doc):
-        self.set_header('Content-Type', 'application/json; charset=UTF-8')
-        self.write(escape.utf8(json.dumps(doc)))
+
+
+class APICondaHandler(APIBaseHandler):
+    @web.authenticated
+    async def get(self, user, type='conda'):
+        self.verify_user(user)
+        info = self.storage.read(user, type)
+        if info:
+            self.write(info)
+
+
+class APIScriptHandler(APIBaseHandler):
+    @web.authenticated
+    async def get(self, user, type='script'):
+        self.verify_user(user)
+        info = self.storage.read(user, type)
+        if info:
+            self.write(info)
